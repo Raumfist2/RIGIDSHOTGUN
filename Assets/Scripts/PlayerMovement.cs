@@ -8,6 +8,12 @@ public class PlayerMovement : MonoBehaviour
     private float moveSpeed;
     public float walkSpeed;
     public float sprintSpeed;
+    public float slideSpeed;
+    private float desiredMoveSpeed;
+    private float lastDesiredMoveSpeed;
+
+    public float speedIncreaseMultiplier;
+    public float slopeIncreaseMultiplier;
 
     public float groundDrag;
 
@@ -53,17 +59,21 @@ public class PlayerMovement : MonoBehaviour
         walking,
         sprinting,
         crouching,
+        sliding,
         air
     }
+
+    public bool sliding;
+    public bool crouching;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>(); //Assigns rigidbody
         rb.freezeRotation = true; //Stops player from falling over
 
-        readyToJump = true;
+        readyToJump = true;//Reset Jump
 
-        startYScale = transform.localScale.y;
+        startYScale = transform.localScale.y;//Starting Y height
     }
 
     private void Update()
@@ -85,6 +95,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate() 
     {
+        //Updates every physics update
         MovePlayer();
     }
 
@@ -104,39 +115,54 @@ public class PlayerMovement : MonoBehaviour
             Invoke(nameof(ResetJump), jumpCooldown);//Lets the player continously jump while holding the key
         }
 
-        //Get Crouch Inputs
-        if(Input.GetKeyDown(crouchKey))
+        // start crouch
+        if (Input.GetKeyDown(crouchKey) && horizontalInput == 0 && verticalInput == 0)
         {
             transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
             rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
+            crouching = true;
         }
+
+        // stop crouch
         if (Input.GetKeyUp(crouchKey))
         {
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
+            crouching = false;
         }
     }
 
     private void StateHandler()
     {
+        //SLIDING
+        if (sliding)
+        {
+            state = MovementState.sliding;
+            // Increases speed by one every second
+            if (OnSlope() && rb.velocity.y < 0.1f)
+                desiredMoveSpeed = slideSpeed;
+            else
+                desiredMoveSpeed = sprintSpeed;
+        }
+
         //CROUCHING
-        if (Input.GetKey(crouchKey))
+        else if (crouching)
         {
             state = MovementState.crouching;
-            moveSpeed = crouchSpeed;
+            desiredMoveSpeed = crouchSpeed;
         }
 
         //SPRINTING
         else if(grounded && Input.GetKey(sprintKey))
         {
             state = MovementState.sprinting;
-            moveSpeed = sprintSpeed;
+            desiredMoveSpeed = sprintSpeed;
         }
 
         //WALKING
         else if (grounded)
         {
             state = MovementState.walking;
-            moveSpeed = walkSpeed;
+            desiredMoveSpeed = walkSpeed;
         }
 
         //AIR
@@ -144,35 +170,74 @@ public class PlayerMovement : MonoBehaviour
         {
             state = MovementState.air;
         }
+
+        // check if desiredMoveSpeed has changed
+        if(Mathf.Abs(desiredMoveSpeed - lastDesiredMoveSpeed) > 4f && moveSpeed != 0)
+        {
+            StopAllCoroutines();
+            StartCoroutine(SmoothlyLerpMoveSpeed());
+        }
+        else
+        {
+            moveSpeed = desiredMoveSpeed;
+        }
+        lastDesiredMoveSpeed = desiredMoveSpeed;
     }
 
 
-        private void MovePlayer()
+    private IEnumerator SmoothlyLerpMoveSpeed()
+    {
+        // smoothly lerp movementSpeed to desired value
+        float time = 0;
+        float difference = Mathf.Abs(desiredMoveSpeed - moveSpeed);
+        float startValue = moveSpeed;
+
+        while (time < difference)
         {
-            //Calculate movement direction
-            moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput; //Moving in the direction looking
+            moveSpeed = Mathf.Lerp(startValue, desiredMoveSpeed, time / difference);
 
-            //On Slope
-            if (OnSlope() && !exitingSlope)
+            if (OnSlope())
             {
-                rb.AddForce(GetSlopeMoveDirection() * moveSpeed * 20f, ForceMode.Force);
+                float slopeAngle = Vector3.Angle(Vector3.up, slopeHit.normal);
+                float slopeAngleIncrease = 1 + (slopeAngle / 90f);
 
-                if (rb.velocity.y > 0)
-                    rb.AddForce(Vector3.down * 80f, ForceMode.Force);
+                time += Time.deltaTime * speedIncreaseMultiplier * slopeIncreaseMultiplier * slopeAngleIncrease;
             }
+            else
+                time += Time.deltaTime * speedIncreaseMultiplier;
 
-            //On Ground
-            else if(grounded)
-            rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force); //Apply force to Rigidbody
-
-            //In Air
-            else if(!grounded)
-                rb.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force); //Apply force to Rigidbody
-
-            //No gravity while on slope, stops sliding down whilst standing still
-            rb.useGravity = !OnSlope();
-
+            yield return null;
         }
+
+        moveSpeed = desiredMoveSpeed;
+    }
+
+    private void MovePlayer()
+    {
+        //Calculate movement direction
+        moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput; //Moving in the direction looking
+
+        //On Slope
+        if (OnSlope() && !exitingSlope)
+        {
+            rb.AddForce(GetSlopeMoveDirection(moveDirection) * moveSpeed * 20f, ForceMode.Force);
+
+            if (rb.velocity.y > 0)
+                rb.AddForce(Vector3.down * 80f, ForceMode.Force);
+        }
+
+        //On Ground
+        else if(grounded)
+        rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force); //Apply force to Rigidbody
+
+        //In Air
+        else if(!grounded)
+            rb.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force); //Apply force to Rigidbody
+
+        //No gravity while on slope, stops sliding down whilst standing still
+        rb.useGravity = !OnSlope();
+
+    }
 
     private void SpeedControl()
     {
@@ -213,7 +278,7 @@ public class PlayerMovement : MonoBehaviour
         exitingSlope = false;
     }
 
-    private bool OnSlope()
+    public bool OnSlope()
     {
         if(Physics.Raycast(transform.position, Vector3.down, out slopeHit, playerHeight * 0.5f + 0.3f))
         {
@@ -224,8 +289,8 @@ public class PlayerMovement : MonoBehaviour
         return false;
     }
 
-    private Vector3 GetSlopeMoveDirection()
+    public Vector3 GetSlopeMoveDirection(Vector3 direction)
     {
-        return Vector3.ProjectOnPlane(moveDirection, slopeHit.normal).normalized;//Changes the move plane from flat to the angle the Slopehit detects
+        return Vector3.ProjectOnPlane(direction, slopeHit.normal).normalized;
     }
 }
