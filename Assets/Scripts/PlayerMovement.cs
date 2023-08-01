@@ -70,33 +70,36 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>(); //Assigns rigidbody
         rb.freezeRotation = true; //Stops player from falling over
-
-        readyToJump = true;//Reset Jump
+        readyToJump = true;//Reset Jump       
 
         startYScale = transform.localScale.y;//Starting Y height
     }
 
     private void Update()
     {
-        //Ground Check
-        grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
+        
 
         //Inputs every frame
         MyInput();
         SpeedControl();
         StateHandler();
 
+        
+    }
+
+    private void FixedUpdate() 
+    {
+        //Ground Check
+        grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
+
+        //Updates every physics update
+        MovePlayer();
+
         //Handles Drag
         if(grounded)
             rb.drag = groundDrag;
         else
             rb.drag = 0;
-    }
-
-    private void FixedUpdate() 
-    {
-        //Updates every physics update
-        MovePlayer();
     }
 
     private void MyInput()
