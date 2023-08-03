@@ -248,7 +248,7 @@ public class PlayerMovement : MonoBehaviour
             rb.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force); //Apply force to Rigidbody
 
         //No gravity while on slope, stops sliding down whilst standing still
-        rb.useGravity = !OnSlope();
+        if(!wallrunning) rb.useGravity = !OnSlope();
 
     }
 
