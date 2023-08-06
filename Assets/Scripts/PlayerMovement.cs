@@ -6,12 +6,14 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
     private float moveSpeed;
+    private float desiredMoveSpeed;
+    private float lastDesiredMoveSpeed;
     public float walkSpeed;
     public float sprintSpeed;
     public float slideSpeed;
-    private float desiredMoveSpeed;
-    private float lastDesiredMoveSpeed;
     public float wallrunSpeed;
+    public float climbSpeed;
+    //vault
 
     public float speedIncreaseMultiplier;
     public float slopeIncreaseMultiplier;
@@ -37,12 +39,15 @@ public class PlayerMovement : MonoBehaviour
     [Header("GroundCheck")]
     public float playerHeight;
     public LayerMask whatIsGround;
-    bool grounded;
+    public bool grounded;
 
     [Header("Slope Handling")]
     public float maxSlopeAngle;
     private RaycastHit slopeHit;
     private bool exitingSlope;
+
+    [Header("References")]
+    public Climbing climbingScript;
 
     public Transform orientation;
 
@@ -57,9 +62,12 @@ public class PlayerMovement : MonoBehaviour
     //MOVEMENT STATES
     public enum MovementState
     {
+        freeze, 
+        unlimited,
         walking,
         sprinting,
         wallrunning,
+        climbing,
         crouching,
         sliding,
         air
@@ -68,6 +76,12 @@ public class PlayerMovement : MonoBehaviour
     public bool sliding;
     public bool crouching;
     public bool wallrunning;
+    public bool climbing;
+
+    public bool freeze;
+    public bool unlimited;
+    
+    public bool restricted;
 
     private void Start()
     {
@@ -80,29 +94,25 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        
+        //Ground Check
+        grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
 
         //Inputs every frame
         MyInput();
         SpeedControl();
         StateHandler();
 
-        
-    }
-
-    private void FixedUpdate() 
-    {
-        //Ground Check
-        grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.3f, whatIsGround);
-
-        //Updates every physics update
-        MovePlayer();
-
         //Handles Drag
         if(grounded)
             rb.drag = groundDrag;
         else
             rb.drag = 0;
+    }
+
+    private void FixedUpdate() 
+    {
+        //Updates every physics update
+        MovePlayer();
     }
 
     private void MyInput()
@@ -137,10 +147,35 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    bool keepMomentum;
+
     private void StateHandler()
     {
+        //FREEZE
+        if(freeze)
+        {
+            state = MovementState.freeze;
+            rb.velocity = Vector3.zero;
+            desiredMoveSpeed = 0f;
+        }
+
+        //UNLIMITED
+        if(unlimited)
+        {
+            state = MovementState.unlimited;
+            desiredMoveSpeed = 12f;
+            return;
+        }
+
+        //CLIMBING
+        if(climbing)
+        {
+            state = MovementState.climbing;
+            desiredMoveSpeed = climbSpeed;
+        }
+
         //WALLRUNNING
-        if(wallrunning)
+        else if(wallrunning)
         {
             state = MovementState.wallrunning;
             desiredMoveSpeed = wallrunSpeed;
@@ -152,7 +187,10 @@ public class PlayerMovement : MonoBehaviour
             state = MovementState.sliding;
             // Increases speed by one every second
             if (OnSlope() && rb.velocity.y < 0.1f)
+            {
                 desiredMoveSpeed = slideSpeed;
+                keepMomentum = true;
+            }
             else
                 desiredMoveSpeed = sprintSpeed;
         }
@@ -184,17 +222,25 @@ public class PlayerMovement : MonoBehaviour
             state = MovementState.air;
         }
 
-        // check if desiredMoveSpeed has changed
-        if(Mathf.Abs(desiredMoveSpeed - lastDesiredMoveSpeed) > 4f && moveSpeed != 0)
+        bool desiredMoveSpeedHasChanged = desiredMoveSpeed != lastDesiredMoveSpeed;
+
+        if (desiredMoveSpeedHasChanged)
         {
-            StopAllCoroutines();
-            StartCoroutine(SmoothlyLerpMoveSpeed());
-        }
-        else
-        {
-            moveSpeed = desiredMoveSpeed;
+            // deactivate keepmomentum
+            if(keepMomentum)
+            {
+                StopAllCoroutines();
+                StartCoroutine(SmoothlyLerpMoveSpeed());
+            }
+            else
+            {
+                moveSpeed = desiredMoveSpeed;
+            }
         }
         lastDesiredMoveSpeed = desiredMoveSpeed;
+
+        //deactivate keepMomentum
+        if (Mathf.Abs(desiredMoveSpeed - moveSpeed) < 0.1f) keepMomentum = false;
     }
 
 
@@ -227,6 +273,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void MovePlayer()
     {
+        if (restricted) return;
+
+        //While exiting wall, pressing W has no effect
+        if(climbingScript.exitingWall) return;
+
         //Calculate movement direction
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput; //Moving in the direction looking
 
