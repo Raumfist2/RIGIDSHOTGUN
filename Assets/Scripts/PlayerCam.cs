@@ -37,7 +37,7 @@ public class PlayerCam : MonoBehaviour
 
     }
 
-    public void DoFOV(float endValue)
+    public void DoFov(float endValue)
     {
         //Changing fov with .25 transition time
         GetComponent<Camera>().DOFieldOfView(endValue, 0.25f);

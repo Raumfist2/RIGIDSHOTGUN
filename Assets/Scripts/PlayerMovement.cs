@@ -13,12 +13,16 @@ public class PlayerMovement : MonoBehaviour
     public float slideSpeed;
     public float wallrunSpeed;
     public float climbSpeed;
-    //vault
+    public float dashSpeed;
+    public float dashSpeedChangeFactor;
 
     public float speedIncreaseMultiplier;
     public float slopeIncreaseMultiplier;
+    
+    public float maxYSpeed;
 
     public float groundDrag;
+    
 
     [Header("Jumping")]
     public float jumpForce;
@@ -69,6 +73,7 @@ public class PlayerMovement : MonoBehaviour
         wallrunning,
         climbing,
         crouching,
+        dashing,
         sliding,
         air
     }
@@ -77,11 +82,14 @@ public class PlayerMovement : MonoBehaviour
     public bool crouching;
     public bool wallrunning;
     public bool climbing;
+    public bool dashing;
 
     public bool freeze;
     public bool unlimited;
-    
     public bool restricted;
+
+    private MovementState lastState;
+    bool keepMomentum;
 
     private void Start()
     {
@@ -103,7 +111,7 @@ public class PlayerMovement : MonoBehaviour
         StateHandler();
 
         //Handles Drag
-        if(grounded)
+        if (state == MovementState.walking || state == MovementState.sprinting || state == MovementState.crouching)
             rb.drag = groundDrag;
         else
             rb.drag = 0;
@@ -147,8 +155,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    bool keepMomentum;
-
     private void StateHandler()
     {
         //FREEZE
@@ -160,7 +166,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         //UNLIMITED
-        if(unlimited)
+        else if(unlimited)
         {
             state = MovementState.unlimited;
             desiredMoveSpeed = 12f;
@@ -168,10 +174,18 @@ public class PlayerMovement : MonoBehaviour
         }
 
         //CLIMBING
-        if(climbing)
+        else if(climbing)
         {
             state = MovementState.climbing;
             desiredMoveSpeed = climbSpeed;
+        }
+
+        //DASHING
+        else if(dashing)
+        {
+            state = MovementState.dashing;
+            desiredMoveSpeed = dashSpeed;
+            speedChangeFactor = dashSpeedChangeFactor;
         }
 
         //WALLRUNNING
@@ -220,10 +234,16 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             state = MovementState.air;
+
+            if (desiredMoveSpeed < sprintSpeed)
+                desiredMoveSpeed = walkSpeed;
+            else
+                desiredMoveSpeed = sprintSpeed;
         }
 
         bool desiredMoveSpeedHasChanged = desiredMoveSpeed != lastDesiredMoveSpeed;
-
+        if(lastState == MovementState.dashing) keepMomentum = true;
+        
         if (desiredMoveSpeedHasChanged)
         {
             // deactivate keepmomentum
@@ -234,22 +254,27 @@ public class PlayerMovement : MonoBehaviour
             }
             else
             {
+                StopAllCoroutines();
                 moveSpeed = desiredMoveSpeed;
             }
         }
+
         lastDesiredMoveSpeed = desiredMoveSpeed;
+        lastState = state;
 
         //deactivate keepMomentum
         if (Mathf.Abs(desiredMoveSpeed - moveSpeed) < 0.1f) keepMomentum = false;
     }
 
-
+    private float speedChangeFactor;
     private IEnumerator SmoothlyLerpMoveSpeed()
     {
         // smoothly lerp movementSpeed to desired value
         float time = 0;
         float difference = Mathf.Abs(desiredMoveSpeed - moveSpeed);
         float startValue = moveSpeed;
+
+        float boostFactor = speedChangeFactor;
 
         while (time < difference)
         {
@@ -263,12 +288,14 @@ public class PlayerMovement : MonoBehaviour
                 time += Time.deltaTime * speedIncreaseMultiplier * slopeIncreaseMultiplier * slopeAngleIncrease;
             }
             else
-                time += Time.deltaTime * speedIncreaseMultiplier;
+                time += Time.deltaTime * boostFactor;
 
             yield return null;
         }
 
         moveSpeed = desiredMoveSpeed;
+        speedChangeFactor = 1f;
+        keepMomentum = false;
     }
 
     private void MovePlayer()
@@ -278,6 +305,7 @@ public class PlayerMovement : MonoBehaviour
         //While exiting wall, pressing W has no effect
         if(climbingScript.exitingWall) return;
 
+        else if (state == MovementState.dashing) return;
         //Calculate movement direction
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput; //Moving in the direction looking
 
@@ -324,6 +352,10 @@ public class PlayerMovement : MonoBehaviour
                 rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
             }
         }
+
+        // limit y vel
+        if (maxYSpeed != 0 && rb.velocity.y > maxYSpeed)
+            rb.velocity = new Vector3(rb.velocity.x, maxYSpeed, rb.velocity.z);
     }
 
     private void Jump()
