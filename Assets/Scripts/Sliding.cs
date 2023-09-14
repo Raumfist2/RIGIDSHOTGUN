@@ -9,6 +9,7 @@ public class Sliding : MonoBehaviour
     public Transform playerObj;
     private Rigidbody rb;
     private PlayerMovement pm;
+    public GameObject WinCanvas;
 
     [Header("Sliding")]
     public float maxSlideTime;
@@ -22,6 +23,7 @@ public class Sliding : MonoBehaviour
     public KeyCode slideKey = KeyCode.LeftControl;
     private float horizontalInput;
     private float verticalInput;
+    
 
     private void Start()
     {
@@ -33,6 +35,10 @@ public class Sliding : MonoBehaviour
 
     private void Update()
     {
+        if(WinCanvas.activeSelf == true)//If win condition is met
+        {
+        }
+        else{
         //Get Keyboard Inputs
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
@@ -43,6 +49,7 @@ public class Sliding : MonoBehaviour
 
         if (Input.GetKeyUp(slideKey) && pm.sliding)
             StopSlide();
+        }
     }
 
     private void FixedUpdate()

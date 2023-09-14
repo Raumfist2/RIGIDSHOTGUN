@@ -14,6 +14,8 @@ public class PlayerCam : MonoBehaviour
     float xRotation;
     float yRotation;
 
+    public GameObject WinCanvas;
+
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;//Stops Cursor from moving
@@ -21,8 +23,12 @@ public class PlayerCam : MonoBehaviour
     }
 
     // Update is called once per frame
-    private void Update()
+    private void LateUpdate()
     {
+        if(WinCanvas.activeSelf == true)//If win condition is met
+        {
+        }
+        else{
         //Get Mouse Input
         float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * sensX;
         float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * sensY;
@@ -34,7 +40,7 @@ public class PlayerCam : MonoBehaviour
         //Rotate Cam and Orientation
         camHolder.rotation = Quaternion.Euler(xRotation, yRotation, 0);
         orientation.rotation = Quaternion.Euler(0, yRotation, 0);
-
+        }
     }
 
     public void DoFov(float endValue)

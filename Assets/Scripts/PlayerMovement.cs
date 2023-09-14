@@ -91,6 +91,8 @@ public class PlayerMovement : MonoBehaviour
     private MovementState lastState;
     bool keepMomentum;
 
+    public GameObject WinCanvas;
+
     private void Start()
     {
         rb = GetComponent<Rigidbody>(); //Assigns rigidbody
@@ -125,6 +127,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void MyInput()
     {
+        if(WinCanvas.activeSelf == true)//If win condition is met
+        {
+            rb.velocity = Vector3.zero;//Stops player from moving
+        }
+        else{
         //Get Movement Inputs
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
@@ -152,6 +159,7 @@ public class PlayerMovement : MonoBehaviour
         {
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
             crouching = false;
+        }
         }
     }
 

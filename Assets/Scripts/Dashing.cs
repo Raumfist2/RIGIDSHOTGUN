@@ -9,6 +9,7 @@ public class Dashing : MonoBehaviour
     public Transform playerCam;
     private Rigidbody rb;
     private PlayerMovement pm;
+    public GameObject WinCanvas;
 
     [Header("Dashing")]
     public float dashForce;
@@ -44,11 +45,16 @@ public class Dashing : MonoBehaviour
 
     private void Update()
     {
+        if(WinCanvas.activeSelf == true)//If win condition is met
+        {
+        }
+        else{
         if (Input.GetKeyDown(dashKey))
             Dash();
         
         if (dashCdTimer > 0)
             dashCdTimer -= Time.deltaTime;
+        }
     }
 
     private void Dash()
