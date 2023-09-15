@@ -13,6 +13,6 @@ public class Jumppad : MonoBehaviour
         GameObject bouncer = collision.gameObject;//Defines
         Rigidbody rb = bouncer.GetComponent<Rigidbody>();//Gets Rigidbody
         rb.AddForce(Vector3.up * bounceheight, ForceMode.Impulse);//Adds force
-        audioSource.Play();
+        audioSource.Play();//Spring sound
     }
 }

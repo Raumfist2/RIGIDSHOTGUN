@@ -23,7 +23,6 @@ public class PlayerMovement : MonoBehaviour
 
     public float groundDrag;
     
-
     [Header("Jumping")]
     public float jumpForce;
     public float jumpCooldown;
@@ -78,6 +77,7 @@ public class PlayerMovement : MonoBehaviour
         air
     }
 
+    //bools of states
     public bool sliding;
     public bool crouching;
     public bool wallrunning;
@@ -90,7 +90,7 @@ public class PlayerMovement : MonoBehaviour
 
     private MovementState lastState;
     bool keepMomentum;
-
+    
     public GameObject WinCanvas;
 
     private void Start()
@@ -384,6 +384,7 @@ public class PlayerMovement : MonoBehaviour
 
     public bool OnSlope()
     {
+        //finds angle
         if(Physics.Raycast(transform.position, Vector3.down, out slopeHit, playerHeight * 0.5f + 0.3f))
         {
             float angle = Vector3.Angle(Vector3.up, slopeHit.normal);
@@ -395,6 +396,7 @@ public class PlayerMovement : MonoBehaviour
 
     public Vector3 GetSlopeMoveDirection(Vector3 direction)
     {
+        //resets horizontal to be on the angle the slope is
         return Vector3.ProjectOnPlane(direction, slopeHit.normal).normalized;
     }
 }

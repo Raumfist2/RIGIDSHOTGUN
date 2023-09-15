@@ -9,16 +9,16 @@ public class OffiiceChairMovement : MonoBehaviour
 
     private void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();//Get component
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnCollisionEnter(Collision collision)//collison
     {
-        if (collision.relativeVelocity.magnitude > pushForce)
+        if (collision.relativeVelocity.magnitude > pushForce)//greater than force
         {
-            Vector3 pushDirection = collision.contacts[0].point - transform.position;
-            pushDirection = -pushDirection.normalized;
-            rb.AddForce(pushDirection * pushForce, ForceMode.Impulse);
+            Vector3 pushDirection = collision.contacts[0].point - transform.position;//find direction
+            pushDirection = -pushDirection.normalized;//normalize direction
+            rb.AddForce(pushDirection * pushForce, ForceMode.Impulse);//apply force
         }
     }
 }

@@ -7,7 +7,7 @@ public class Audio : MonoBehaviour
     public AudioSource audioSource;
     void Start()
     {
-        audioSource.Play();
+        audioSource.Play();//links to play from source
     }
 
 }

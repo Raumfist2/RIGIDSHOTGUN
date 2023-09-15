@@ -7,11 +7,11 @@ public class LoseGame : MonoBehaviour
 {
     public void RestartButton()
     {
-        SceneManager.LoadScene("GAME");
+        SceneManager.LoadScene("GAME");//game scene
     }
 
     public void ExitButton()
     {
-        SceneManager.LoadScene("Main Menu");
+        SceneManager.LoadScene("Main Menu");//main menu
     }
 }

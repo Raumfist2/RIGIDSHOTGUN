@@ -36,22 +36,24 @@ public class Dashing : MonoBehaviour
 
     private void Start()
     {
+        //Checks Camera
         if (playerCam == null)
             playerCam = Camera.main.transform;
 
+        //Gets Components
         rb = GetComponent<Rigidbody>();
         pm = GetComponent<PlayerMovement>();
     }
 
     private void Update()
     {
-        if(WinCanvas.activeSelf == true)//If win condition is met
-        {
-        }
-        else{
+        if(!WinCanvas.activeSelf == true)//If win condition is not met
+    {
+        //E input
         if (Input.GetKeyDown(dashKey))
             Dash();
         
+        //Countdown timer
         if (dashCdTimer > 0)
             dashCdTimer -= Time.deltaTime;
         }
@@ -59,11 +61,14 @@ public class Dashing : MonoBehaviour
 
     private void Dash()
     {
+        //Check parameters
         if(dashCdTimer > 0) return;
         else dashCdTimer = dashCd;
 
+        //Fov change
         cam.DoFov(dashFov);
 
+        //Is dashing and max Yspeed to DashYmax
         pm.dashing = true;
         pm.maxYSpeed = maxDashYSpeed;
 
@@ -78,9 +83,11 @@ public class Dashing : MonoBehaviour
 
         Vector3 forceToApply = direction * dashForce + orientation.up * dashUpwardForce;
 
+        //Stops gravity
         if (disableGravity)
             rb.useGravity = false;
 
+        //Delays force
         delayedForceToApply = forceToApply;
         Invoke(nameof(DelayedDashForce), 0.025f);
 
@@ -101,19 +108,23 @@ public class Dashing : MonoBehaviour
         pm.dashing = false;
         pm.maxYSpeed = 0;
 
+        //Fov change
         cam.DoFov(85f);
 
+        //Re-enable gravity
         if (disableGravity)
             rb.useGravity = true;
     }
 
     private Vector3 GetDirection(Transform forwardT)
     {
+        //Gets input
         float horizontalInput = Input.GetAxisRaw("Horizontal");
         float verticalInput = Input.GetAxisRaw("Vertical");
 
         Vector3 direction = new Vector3();
 
+        //Directional dashing
         if (allowAllDirections)
             direction = forwardT.forward * verticalInput + forwardT.right * horizontalInput;
         else

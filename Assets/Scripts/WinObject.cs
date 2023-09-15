@@ -12,6 +12,7 @@ public class WinObject : MonoBehaviour
 
     void Start()
     {
+        //Default values
         WinCanvas.SetActive(false);
         MAINUI.SetActive(true);
     }
@@ -20,7 +21,7 @@ public class WinObject : MonoBehaviour
     {
         if (other.CompareTag("Player")) //Check if the colliding object is the player
         {
-            //Display the death screen.
+            //Display the win screen.
             WinCanvas.SetActive(true);
             //Hide UI.
             MAINUI.SetActive(false);

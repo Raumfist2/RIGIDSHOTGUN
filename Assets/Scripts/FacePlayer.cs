@@ -15,8 +15,8 @@ public class FacePlayer : MonoBehaviour
 
     private void FaceTarget()
     {
-        Vector3 direction = (target.transform.position - transform.position).normalized;
-        Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z));
-        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 3f);
+        Vector3 direction = (target.transform.position - transform.position).normalized; //Finds direction
+        Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, direction.y, direction.z)); //Gets the rotation
+        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 3f); //Smoothly rotates it over a time interval
     }
 }

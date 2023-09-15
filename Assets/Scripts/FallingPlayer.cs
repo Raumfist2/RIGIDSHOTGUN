@@ -8,7 +8,7 @@ public class FallingPlayer : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        player = GameObject.Find("Player");
+        player = GameObject.Find("Player");//find player tag
     }
 
     // Update is called once per frame
@@ -16,7 +16,7 @@ public class FallingPlayer : MonoBehaviour
     {
         if (player.transform.position.y <= -10)
         {
-            player.transform.position = new Vector3(0, 10, 0);
+            player.transform.position = new Vector3(0, 10, 0);//If player falls out of bounds respawn the, used in development.
         }
     }
 }

@@ -9,6 +9,7 @@ public class KillObject : MonoBehaviour
 
     void Start()
     {
+        //Default values
         LoseCanvas.SetActive(false);
         MAINUI.SetActive(true);
     }

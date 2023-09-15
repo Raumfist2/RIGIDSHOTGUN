@@ -46,15 +46,16 @@ public class Climbing : MonoBehaviour
 
     private void Start()
     {
-        lg = GetComponent<LedgeGrabbing>();
+        lg = GetComponent<LedgeGrabbing>();//Grabs component
     }
 
     private void Update()
     {
+        //Run functions
         WallCheck();
         StateMachine();
 
-        if (climbing && !exitingWall) ClimbingMovement();
+        if (climbing && !exitingWall) ClimbingMovement();//Perform if climbing but not leaving the wall
     }
 
     private void StateMachine()
@@ -91,15 +92,15 @@ public class Climbing : MonoBehaviour
             if(climbing) StopClimbing();
         }
 
-        if(wallFront && Input.GetKeyDown(jumpKey) && climbJumpsLeft > 0) ClimbJump();
+        if(wallFront && Input.GetKeyDown(jumpKey) && climbJumpsLeft > 0) ClimbJump(); //Jumping off wall
     }
 
     private void WallCheck()
     {
-        wallFront = Physics.SphereCast(transform.position, sphereCastRadius, orientation.forward, out frontWallHit, detectionLength, whatIsWall);
-        wallLookAngle = Vector3.Angle(orientation.forward, -frontWallHit.normal);
+        wallFront = Physics.SphereCast(transform.position, sphereCastRadius, orientation.forward, out frontWallHit, detectionLength, whatIsWall); //Calc using sphere cast the wall infront of the player
+        wallLookAngle = Vector3.Angle(orientation.forward, -frontWallHit.normal);//Calc wall angle the user is looking at
 
-        bool newWall = frontWallHit.transform != lastWall || Mathf.Abs(Vector3.Angle(lastWallNormal, frontWallHit.normal)) > minWallNormalAngleChange;
+        bool newWall = frontWallHit.transform != lastWall || Mathf.Abs(Vector3.Angle(lastWallNormal, frontWallHit.normal)) > minWallNormalAngleChange; //Checks if the previous wall climbed is the same
 
         //Resets Climb timer once grounded
         if ((wallFront && newWall) || pm.grounded)
@@ -112,6 +113,7 @@ public class Climbing : MonoBehaviour
     
     private void StartClimbing()
     {
+        //Set values to true
         climbing = true;
         pm.climbing = true;
 
@@ -122,25 +124,30 @@ public class Climbing : MonoBehaviour
 
     private void ClimbingMovement()
     {
-        rb.velocity = new Vector3(rb.velocity.x, climbSpeed, rb.velocity.z);
+        rb.velocity = new Vector3(rb.velocity.x, climbSpeed, rb.velocity.z);//Set y vel to climb speed
     }
 
     private void StopClimbing()
     {
+        //Deactivate climbing
         climbing = false;
         pm.climbing = false;
     }
 
     private void ClimbJump()
     {
+        //Checks if not grounded or leaving a ledge.
         if(pm.grounded) return;
         if(lg.holding || lg.exitingLedge) return;
 
+        //Sets exiting wall true & reset wall timer
         exitingWall = true;
         exitWallTimer = exitWallTime;
 
+        //Applys forces from climbJumpUpForce
         Vector3 forceToApply = transform.up * climbJumpUpForce + frontWallHit.normal * climbJumpBackForce;
 
+        //Calcs velocity and adds it using ForceMode.Impulse
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
         rb.AddForce(forceToApply, ForceMode.Impulse);
 
